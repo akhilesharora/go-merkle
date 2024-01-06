@@ -15,7 +15,7 @@ LDFLAGS=-ldflags "-s -w"
 
 # Build Commands
 GOBUILD=go build $(LDFLAGS)
-GOTEST=go test -race
+GOTEST=go test -v -race
 
 # Build the application
 build:
