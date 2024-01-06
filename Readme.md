@@ -14,8 +14,7 @@ This application demonstrates a Merkle tree implementation in Go for ensuring da
 Clone the repository:
 
 ```bash
-# Not published as of now thus we will unzip for now
-# git clone https://github.com/akhilesharora/go-merkle.git 
+git clone https://github.com/akhilesharora/go-merkle.git
 unzip go-merkle.zip -d $GOPATH/src/akhilesharora/go-merkle
 cd $GOPATH/src/akhilesharora/go-merkle
 ```
