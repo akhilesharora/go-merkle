@@ -1,0 +1,1 @@
+echo "The quick brown fox jumps over the lazy dog. This is a sample file for testing." > sample.txt
