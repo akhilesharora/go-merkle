@@ -9,9 +9,9 @@ func SetupRoutes(s server.ServerInterface) *mux.Router {
 	r := mux.NewRouter()
 	h := &Handlers{Server: s}
 
-	r.HandleFunc("/upload", h.UploadHandler).Methods("POST")
-	r.HandleFunc("/download/{index}", h.DownloadHandler).Methods("GET")
-	r.HandleFunc("/proof/{index}", h.ProofHandler).Methods("GET")
+	r.HandleFunc("/upload", CORSMiddleware(h.UploadHandler)).Methods("POST", "OPTIONS")
+	r.HandleFunc("/download/{index}", CORSMiddleware(h.DownloadHandler)).Methods("GET", "OPTIONS")
+	r.HandleFunc("/proof/{index}", CORSMiddleware(h.ProofHandler)).Methods("GET", "OPTIONS")
 	r.PathPrefix("/").HandlerFunc(h.ServeUI)
 
 	return r
