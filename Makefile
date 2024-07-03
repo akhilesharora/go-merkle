@@ -6,7 +6,7 @@ DOCKER_TAG=latest
 APP_NAME=go-merkle-app
 DOCKER_IMAGE_NAME=$(APP_NAME):$(DOCKER_TAG)
 
-.PHONY: all build build-server build-client run-server run-client test test-coverage clean docker-compose-up docker-compose-down docker-build-server docker-build-client docker-build-ui help
+.PHONY: all build build-server build-client run-server run-client test test-coverage clean docker-compose-up docker-compose-down docker-build docker-build-server docker-build-client docker-build-ui help
 
 # Default target
 all: clean build test
@@ -68,6 +68,9 @@ docker-compose-down:
 	@echo "Stopping Docker Compose services..."
 	@docker-compose down
 
+# Build all Docker images
+docker-build: docker-build-server docker-build-client docker-build-ui
+
 # Build server Docker image
 docker-build-server:
 	@echo "Building server Docker image..."
@@ -99,6 +102,7 @@ help:
 	@echo "  clean              Remove binary files and coverage report"
 	@echo "  docker-compose-up  Start Docker Compose services"
 	@echo "  docker-compose-down Stop Docker Compose services"
+	@echo "  docker-build       Build all Docker images"
 	@echo "  docker-build-server Build server Docker image"
 	@echo "  docker-build-client Build client Docker image"
 	@echo "  docker-build-ui    Build UI Docker image"
