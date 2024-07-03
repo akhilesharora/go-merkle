@@ -60,9 +60,13 @@
                 method: 'POST',
                 body: formData
             });
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
             const result = await response.json();
             uploadResult.textContent = `Upload successful. File index: ${result.fileIndex}`;
         } catch (error) {
+            console.error('Error:', error);
             uploadResult.textContent = `Upload failed: ${error.message}`;
         }
     }
@@ -78,9 +82,20 @@
 
         try {
             const response = await fetch(`/download/${fileIndex}`);
-            const fileData = await response.blob();
-            const fileName = `file_${fileIndex}`;
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
+            }
 
+            const fileData = await response.blob();
+            const text = await fileData.text();
+
+            if (text === "Invalid file index") {
+                downloadResult.textContent = "Invalid file index. Download not allowed.";
+                return;
+            }
+            // Proceed with download if the file index is valid
+            const fileName = `file_${fileIndex}`;
             const a = document.createElement('a');
             a.href = URL.createObjectURL(fileData);
             a.download = fileName;
