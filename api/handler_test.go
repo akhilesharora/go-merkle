@@ -42,7 +42,6 @@ func (m *MockServer) GenerateMerkleProof(index int) ([][32]byte, []bool, error) 
 	return args.Get(0).([][32]byte), args.Get(1).([]bool), args.Error(2)
 }
 
-// TestUploadHandler tests the UploadHandler function
 func TestUploadHandler(t *testing.T) {
 	mockServer := new(MockServer)
 	handler := &Handlers{Server: mockServer}
@@ -51,7 +50,7 @@ func TestUploadHandler(t *testing.T) {
 	body := new(bytes.Buffer)
 	writer := multipart.NewWriter(body)
 	part, _ := writer.CreateFormFile("file", "testfile.txt")
-	part.Write([]byte("file content"))
+	_, _ = part.Write([]byte("file content"))
 	writer.Close()
 
 	req, err := http.NewRequest("POST", "/upload?filename=testfile.txt", body)

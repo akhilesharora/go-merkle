@@ -1,4 +1,3 @@
-// pkg/merkle/merkle.go
 package merkle
 
 import (

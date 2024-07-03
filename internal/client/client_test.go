@@ -3,7 +3,6 @@ package client
 import (
 	"bytes"
 	"encoding/json"
-	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -18,16 +17,9 @@ func uploadHandler(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
 
-// Mock server handler for download
-func downloadHandler(w http.ResponseWriter, r *http.Request) {
-	fileData := []byte("mock file data")
-	w.Write(fileData)
-}
-
-// Test for UploadFiles method
 func TestUploadFiles(t *testing.T) {
 	// Create a temporary file to upload
-	tmpfile, err := ioutil.TempFile("", "example")
+	tmpfile, err := os.CreateTemp("", "example")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -63,7 +55,7 @@ func TestDownloadAndVerifyFile(t *testing.T) {
 	rootHash := merkleTree.Root.Hash
 
 	rootHashPath := "root_hash.txt"
-	err := ioutil.WriteFile(rootHashPath, rootHash[:], 0644)
+	err := os.WriteFile(rootHashPath, rootHash[:], 0644)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -71,13 +63,16 @@ func TestDownloadAndVerifyFile(t *testing.T) {
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if strings.Contains(r.URL.Path, "/download/") {
-			w.Write(mockFileData)
+			_, _ = w.Write(mockFileData)
 		} else if strings.Contains(r.URL.Path, "/proof/") {
 			proof, _, _ := merkleTree.GenerateProof(0)
-			json.NewEncoder(w).Encode(map[string]interface{}{
+			err := json.NewEncoder(w).Encode(map[string]interface{}{
 				"proof":      proof,
 				"directions": proof,
 			})
+			if err != nil {
+				return
+			}
 		}
 	}))
 	defer server.Close()
@@ -93,7 +88,6 @@ func TestDownloadAndVerifyFile(t *testing.T) {
 	}
 }
 
-// Test for VerifyProof method
 func TestVerifyProof(t *testing.T) {
 	client := NewClient("")
 

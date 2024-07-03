@@ -5,7 +5,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"log"
 	"mime/multipart"
 	"net/http"
@@ -32,7 +32,7 @@ func NewClient(serverURL string) *Client {
 func (c *Client) UploadFiles(files []string) (string, error) {
 	var merkleFiles []merkle.File
 	for _, file := range files {
-		data, err := ioutil.ReadFile(file)
+		data, err := os.ReadFile(file)
 		if err != nil {
 			return "", err
 		}
@@ -60,7 +60,10 @@ func (c *Client) uploadFile(file string, data []byte) error {
 	if err != nil {
 		return err
 	}
-	part.Write(data)
+	_, err = part.Write(data)
+	if err != nil {
+		return err
+	}
 	writer.Close()
 
 	req, err := http.NewRequest("POST", c.serverURL+"/upload?filename="+filepath.Base(file), body)
@@ -99,7 +102,7 @@ func (c *Client) downloadFile(fileIndex int) ([]byte, error) {
 	}
 	defer resp.Body.Close()
 
-	fileData, err := ioutil.ReadAll(resp.Body)
+	fileData, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return nil, err
 	}

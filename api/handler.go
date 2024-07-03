@@ -42,7 +42,11 @@ func (h *Handlers) UploadHandler(w http.ResponseWriter, r *http.Request) {
 		"fileIndex": fileIndex,
 	}
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(response)
+	err = json.NewEncoder(w).Encode(response)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
 }
 
 func (h *Handlers) DownloadHandler(w http.ResponseWriter, r *http.Request) {
@@ -59,7 +63,11 @@ func (h *Handlers) DownloadHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.Write(fileData)
+	_, err = w.Write(fileData)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
 }
 
 func (h *Handlers) ProofHandler(w http.ResponseWriter, r *http.Request) {
@@ -80,7 +88,11 @@ func (h *Handlers) ProofHandler(w http.ResponseWriter, r *http.Request) {
 		"proof":      proof,
 		"directions": directions,
 	}
-	json.NewEncoder(w).Encode(response)
+	err = json.NewEncoder(w).Encode(response)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
 }
 
 func (h *Handlers) ServeUI(w http.ResponseWriter, r *http.Request) {

@@ -32,7 +32,10 @@ func main() {
 
 	switch os.Args[1] {
 	case "upload":
-		uploadCmd.Parse(os.Args[2:])
+		err := uploadCmd.Parse(os.Args[2:])
+		if err != nil {
+			return
+		}
 		files := strings.Split(*uploadFiles, ",")
 		rootHash, err := c.UploadFiles(files)
 		if err != nil {
@@ -40,7 +43,10 @@ func main() {
 		}
 		fmt.Printf("Upload successful. Root hash: %s\n", rootHash)
 	case "download":
-		downloadCmd.Parse(os.Args[2:])
+		err := downloadCmd.Parse(os.Args[2:])
+		if err != nil {
+			return
+		}
 		fileData, err := c.DownloadAndVerifyFile(*downloadIndex)
 		if err != nil {
 			log.Fatalf("Failed to download and verify file: %v", err)
