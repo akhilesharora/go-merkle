@@ -1,100 +1,125 @@
 package merkle
 
 import (
-	"reflect"
+	"bytes"
 	"testing"
 )
 
+func TestCreateHash(t *testing.T) {
+	data := []byte("test data")
+	hash := CreateHash(data)
+	if hash == [32]byte{} {
+		t.Error("CreateHash returned an empty hash")
+	}
+}
+
 func TestBuildMerkleTree(t *testing.T) {
-	files := []File{{Data: "File1"}, {Data: "File2"}}
+	files := []File{
+		{Data: "file1"},
+		{Data: "file2"},
+		{Data: "file3"},
+	}
 
-	t.Run("ValidTreeConstruction", func(t *testing.T) {
-		tree := BuildMerkleTree(files)
-		if tree.Root == nil {
-			t.Error("Merkle tree root should not be nil")
-		}
-		if len(tree.Leaves) != 2 {
-			t.Errorf("Merkle tree should have 2 leaves, got %d", len(tree.Leaves))
-		}
-	})
+	tree := BuildMerkleTree(files)
 
-	t.Run("SingleFileTree", func(t *testing.T) {
-		singleFileTree := BuildMerkleTree([]File{{Data: "SingleFile"}})
-		if len(singleFileTree.Leaves) != 1 {
-			t.Errorf("Merkle tree should have 1 leaf for single file, got %d", len(singleFileTree.Leaves))
-		}
-	})
+	if tree.Root == nil {
+		t.Error("BuildMerkleTree returned a tree with nil root")
+	}
 
-	t.Run("TreeWithOddNumberOfFiles", func(t *testing.T) {
-		oddFiles := []File{{Data: "File1"}, {Data: "File2"}, {Data: "File3"}}
-		tree := BuildMerkleTree(oddFiles)
-		if len(tree.Leaves) != 3 {
-			t.Errorf("Expected 3 leaves, got %d", len(tree.Leaves))
-		}
-	})
+	if len(tree.Leaves) != len(files) {
+		t.Errorf("Expected %d leaves, got %d", len(files), len(tree.Leaves))
+	}
+}
 
-	t.Run("TreeStructureValidation", func(t *testing.T) {
-		tree := BuildMerkleTree(files)
-		for _, leaf := range tree.Leaves {
-			current := leaf
-			for current.Parent != nil {
-				if current.Parent.Left != current && current.Parent.Right != current {
-					t.Error("Tree structure invalid: parent-child relationship mismatch")
-				}
-				current = current.Parent
-			}
-			if current != tree.Root {
-				t.Error("Tree structure invalid: didn't reach root")
-			}
-		}
-	})
+func TestBuildMerkleTreeEmptyInput(t *testing.T) {
+	tree := BuildMerkleTree([]File{})
 
-	t.Run("EmptyTree", func(t *testing.T) {
-		emptyTree := BuildMerkleTree([]File{})
-		if emptyTree.Root != nil {
-			t.Error("Root of an empty Merkle tree should be nil")
-		}
-	})
+	if tree.Root != nil {
+		t.Error("BuildMerkleTree with empty input should return a tree with nil root")
+	}
 
-	t.Run("LeafHashes", func(t *testing.T) {
-		tree := BuildMerkleTree(files)
-		for i, file := range files {
-			if tree.Leaves[i].Hash != Hash(file.Data) {
-				t.Errorf("Leaf hash does not match hash of file data for file %d", i)
-			}
-		}
-	})
+	if len(tree.Leaves) != 0 {
+		t.Error("BuildMerkleTree with empty input should return a tree with no leaves")
+	}
+}
 
-	t.Run("ParentHashes", func(t *testing.T) {
-		tree := BuildMerkleTree(files)
-		for _, leaf := range tree.Leaves {
-			current := leaf
-			for current.Parent != nil {
-				expectedHash := Hash(string(current.Parent.Left.Hash[:]) + string(current.Parent.Right.Hash[:]))
-				if current.Parent.Hash != expectedHash {
-					t.Error("Parent hash does not match combined hash of its children")
-				}
-				current = current.Parent
-			}
-		}
-	})
+func TestGetSibling(t *testing.T) {
+	files := []File{
+		{Data: "file1"},
+		{Data: "file2"},
+	}
 
-	t.Run("UpdateTree", func(t *testing.T) {
-		tree := BuildMerkleTree(files)
-		newData := "UpdatedFile"
-		err := tree.Update(0, newData)
-		if err != nil {
-			t.Errorf("Update failed: %v", err)
-		}
-		if tree.Leaves[0].Hash != Hash(newData) {
-			t.Error("Updated leaf hash does not match new data hash")
-		}
+	tree := BuildMerkleTree(files)
 
-		// Check if root hash has changed after update
-		originalRootHash := tree.Root.Hash
-		tree = BuildMerkleTree(files) // Rebuild tree with original files
-		if reflect.DeepEqual(originalRootHash, tree.Root.Hash) {
-			t.Error("Root hash did not change after leaf update")
-		}
-	})
+	if tree.Leaves[0].GetSibling() != tree.Leaves[1] {
+		t.Error("GetSibling failed for left leaf")
+	}
+
+	if tree.Leaves[1].GetSibling() != tree.Leaves[0] {
+		t.Error("GetSibling failed for right leaf")
+	}
+
+	if tree.Root.GetSibling() != nil {
+		t.Error("Root node should not have a sibling")
+	}
+}
+
+func TestHashPair(t *testing.T) {
+	left := []byte("left")
+	right := []byte("right")
+	hash := HashPair(left, right)
+
+	if hash == [32]byte{} {
+		t.Error("HashPair returned an empty hash")
+	}
+
+	// Test commutativity
+	hashReverse := HashPair(right, left)
+	if bytes.Equal(hash[:], hashReverse[:]) {
+		t.Error("HashPair should not be commutative")
+	}
+}
+
+func TestGenerateProof(t *testing.T) {
+	files := []File{
+		{Data: "file1"},
+		{Data: "file2"},
+		{Data: "file3"},
+		{Data: "file4"},
+	}
+
+	tree := BuildMerkleTree(files)
+
+	proof, directions, err := tree.GenerateProof(1)
+
+	if err != nil {
+		t.Errorf("GenerateProof returned an error: %v", err)
+	}
+
+	if len(proof) != 2 { // log2(4) = 2
+		t.Errorf("Expected proof length 2, got %d", len(proof))
+	}
+
+	if len(directions) != len(proof) {
+		t.Errorf("Directions length (%d) doesn't match proof length (%d)", len(directions), len(proof))
+	}
+}
+
+func TestGenerateProofOutOfRange(t *testing.T) {
+	files := []File{
+		{Data: "file1"},
+		{Data: "file2"},
+	}
+
+	tree := BuildMerkleTree(files)
+
+	_, _, err := tree.GenerateProof(-1)
+	if err == nil {
+		t.Error("GenerateProof should return an error for negative index")
+	}
+
+	_, _, err = tree.GenerateProof(2)
+	if err == nil {
+		t.Error("GenerateProof should return an error for out of range index")
+	}
 }

@@ -1,3 +1,4 @@
+// pkg/merkle/merkle.go
 package merkle
 
 import (
@@ -5,10 +6,12 @@ import (
 	"fmt"
 )
 
+// File represents a file with its data
 type File struct {
 	Data string
 }
 
+// Node represents a node in the Merkle tree
 type Node struct {
 	Left   *Node
 	Right  *Node
@@ -16,14 +19,15 @@ type Node struct {
 	Hash   [32]byte
 }
 
+// MerkleTree represents the entire Merkle tree
 type MerkleTree struct {
 	Root   *Node
 	Leaves []*Node
 }
 
-// Hash computes the SHA-256 hash of input data
-func Hash(data string) [32]byte {
-	return sha256.Sum256([]byte(data))
+// CreateHash computes the SHA-256 hash of input data
+func CreateHash(data []byte) [32]byte {
+	return sha256.Sum256(data)
 }
 
 // BuildMerkleTree constructs a Merkle tree from the given files
@@ -34,7 +38,7 @@ func BuildMerkleTree(files []File) *MerkleTree {
 
 	var leaves []*Node
 	for _, file := range files {
-		leaf := &Node{Hash: Hash(file.Data)}
+		leaf := &Node{Hash: CreateHash([]byte(file.Data))}
 		leaves = append(leaves, leaf)
 	}
 
@@ -60,7 +64,7 @@ func buildTree(nodes []*Node) *Node {
 		parent := &Node{
 			Left:  left,
 			Right: right,
-			Hash:  Hash(string(left.Hash[:]) + string(right.Hash[:])),
+			Hash:  CreateHash(append(left.Hash[:], right.Hash[:]...)),
 		}
 		left.Parent, right.Parent = parent, parent
 		newLevel = append(newLevel, parent)
@@ -80,28 +84,34 @@ func (n *Node) GetSibling() *Node {
 	return n.Parent.Left
 }
 
-func HashPair(hash1, hash2 [32]byte) [32]byte {
-	combined := append(hash1[:], hash2[:]...)
-	return Hash(string(combined))
+// HashPair hashes two concatenated hashes
+func HashPair(left, right []byte) [32]byte {
+	combined := append(left, right...)
+	return CreateHash(combined)
 }
 
-// Update updates the data at the specified index and recalculates the necessary hashes.
-func (t *MerkleTree) Update(index int, newData string) error {
+// GenerateProof generates a Merkle proof for the given file index.
+func (t *MerkleTree) GenerateProof(index int) ([][32]byte, []bool, error) {
 	if index < 0 || index >= len(t.Leaves) {
-		return fmt.Errorf("index out of range")
+		return nil, nil, fmt.Errorf("index out of range")
 	}
 
-	// Update the leaf node's data
-	leafNode := t.Leaves[index]
-	leafNode.Hash = Hash(newData)
+	var proof [][32]byte
+	var directions []bool
+	currentNode := t.Leaves[index]
 
-	// Recalculate hashes up the tree
-	currentNode := leafNode
 	for currentNode.Parent != nil {
-		parent := currentNode.Parent
-		parent.Hash = Hash(string(parent.Left.Hash[:]) + string(parent.Right.Hash[:]))
-		currentNode = parent
+		sibling := currentNode.GetSibling()
+		proof = append(proof, sibling.Hash)
+		directions = append(directions, currentNode == currentNode.Parent.Left)
+		currentNode = currentNode.Parent
 	}
 
-	return nil
+	// We shall reverse the proof and directions as we've built them from leaf to root
+	for i, j := 0, len(proof)-1; i < j; i, j = i+1, j-1 {
+		proof[i], proof[j] = proof[j], proof[i]
+		directions[i], directions[j] = directions[j], directions[i]
+	}
+
+	return proof, directions, nil
 }
