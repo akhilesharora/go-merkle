@@ -16,7 +16,7 @@ A Go-based application demonstrating Merkle tree implementation for data integri
 - [Usage](#usage)
 - [Testing](#testing)
 - [Docker](#docker)
-  - [Caveats and Limitations](#caveats-and-limitations)
+- [Caveats and Limitations](#caveats-and-limitations)
 - [License](#license)
 
 ## Features
@@ -168,7 +168,6 @@ This will start the client, server, and UI services. You can access the applicat
 * Testing Coverage: Good coverage for major functionalities. Edge cases and stress conditions can be thought for more improvement.
 * Code Maintainability: Code is structured for maintainability, with ongoing efforts to improve documentation and code clarity.
 * Data Persistence: Currently, the data is stored only in temporary storage, meaning it resides in memory during runtime and is not persisted after the application stops. 
-* HTTP Handlers: Future version to have HTTP handlers for client-server communication.
 * Basic UI for Client Side: For client side a simple user interface to improve usability and interaction.
 
 ## License
