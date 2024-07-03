@@ -2,6 +2,21 @@
 
 set -e  # Exit immediately if a command exits with a non-zero status
 
+check_server() {
+    echo "Checking if server is running..."
+    if curl -s -f -o /dev/null "http://localhost:8080"; then
+        echo "Server is running."
+        return 0
+    else
+        echo "Server is not running. Please start the server and try again."
+        return 1
+    fi
+}
+
+if ! check_server; then
+    exit 1
+fi
+
 echo "Uploading file..."
 UPLOAD_RESULT=$(curl -s -X POST -H "Content-Type: multipart/form-data" -F "file=@sample.txt" "http://localhost:8080/upload?filename=sample.txt")
 echo "Upload result: $UPLOAD_RESULT"
