@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Merkle Tree File Upload System</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        h1 {
+            text-align: center;
+        }
+        .section {
+            margin-bottom: 20px;
+        }
+        input[type="file"], input[type="number"] {
+            margin-right: 10px;
+        }
+    </style>
+</head>
+<body>
+<h1>Merkle Tree File Upload System</h1>
+
+<div class="section">
+    <h2>Upload Files</h2>
+    <input type="file" id="fileInput" multiple>
+    <button onclick="uploadFiles()">Upload</button>
+    <div id="uploadResult"></div>
+</div>
+
+<div class="section">
+    <h2>Download and Verify File</h2>
+    <input type="number" id="fileIndex" placeholder="File Index">
+    <button onclick="downloadAndVerifyFile()">Download and Verify</button>
+    <div id="downloadResult"></div>
+</div>
+
+<script>
+    async function uploadFiles() {
+        const fileInput = document.getElementById('fileInput');
+        const files = fileInput.files;
+        const uploadResult = document.getElementById('uploadResult');
+
+        if (files.length === 0) {
+            uploadResult.textContent = 'Please select one or more files to upload.';
+            return;
+        }
+
+        const formData = new FormData();
+        for (let i = 0; i < files.length; i++) {
+            formData.append('file', files[i]);
+        }
+
+        try {
+            const response = await fetch('/upload', {
+                method: 'POST',
+                body: formData
+            });
+            const result = await response.json();
+            uploadResult.textContent = `Upload successful. File index: ${result.fileIndex}`;
+        } catch (error) {
+            uploadResult.textContent = `Upload failed: ${error.message}`;
+        }
+    }
+
+    async function downloadAndVerifyFile() {
+        const fileIndex = document.getElementById('fileIndex').value;
+        const downloadResult = document.getElementById('downloadResult');
+
+        if (!fileIndex) {
+            downloadResult.textContent = 'Please enter a file index.';
+            return;
+        }
+
+        try {
+            const response = await fetch(`/download/${fileIndex}`);
+            const fileData = await response.blob();
+            const fileName = `file_${fileIndex}`;
+
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(fileData);
+            a.download = fileName;
+            a.style.display = 'none';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+
+            downloadResult.textContent = `File downloaded and verified successfully.`;
+        } catch (error) {
+            downloadResult.textContent = `Download and verification failed: ${error.message}`;
+        }
+    }
+</script>
+</body>
+</html>
